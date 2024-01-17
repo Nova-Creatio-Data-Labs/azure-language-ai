@@ -5,7 +5,77 @@ from azure.ai.textanalytics import TextAnalyticsClient
 from azure.core.credentials import AzureKeyCredential
 import json
 
+# Initialize some useful variables. 
+psalms_filename = "OT-21_Psalms.json"
+proverbs_filename = "OT-22_Proverbs.json"
+matthew_filename = "NT-01_Matthew.json"
+mark_filename = "NT-02_Mark.json"
+luke_filename = "NT-03_Luke.json"
+john_filename = "NT-04_John.json"
+isiah_filename = "OT-27_Isaiah.json"
 
+
+# This function reads the bible book and returns a dictionary of chapters.
+# If flat = 1, then it is flattened such that each chatper is a single string. 
+# If flat = 2, then the entire book is flattened into a single string.
+# If flat is neithher 1 nor 2, then the book is returned as a dictiaonry of dicationaries.
+def scripture_book_reader(filename, flat = None):
+
+    datapath = "datasets\CPDV-JSON\\" # This is the path to the JSON files.
+
+    try:
+        # Opening JSON file containing Psalms
+        f = open(datapath + filename, encoding='utf-8')
+        
+        # returns JSON object as 
+        # a dictionary
+        filedata = json.load(f)
+        
+        # Closing file
+        f.close()
+    except Exception as e:
+        print(f"Error! Could not open the file called {filename} in {datapath}. Is there such a file? Error statement: {e}")
+        return None
+
+    # If it is returned as a dictionary of dictionaries, then we are done.
+    if flat != 1 :
+        if flat != 2:
+            return filedata
+              
+    ag_list = []
+    ag_dict = dict()
+
+    # Read over every chapter. 
+    for chapter in list(filedata.keys())[:-1]:
+        
+        # Start with the empty string that will be built up and added to each list element. 
+        inter_text = ""
+
+        # Then go over each verse.
+        for verse in filedata[chapter].values():
+            
+            inter_text += verse + ". "
+
+        ag_list.append(inter_text)
+        ag_dict[chapter] = inter_text
+
+    # If it is returned with flat = 1, as a list  of strings, then return this as-is.
+    if flat == 1:
+        print(f"I read in {filename}, with each list element containing a chapter as a string; this includes {len(ag_list)} list elements (and chapters).")
+        return ag_dict
+    
+    # If flat = 2, then transform the values of ag_dict into a single string.
+    if flat == 2:
+
+        ret_str = ""
+
+        for chapter in ag_list:
+            ret_str += chapter + " "
+
+        print(f"I read in {filename} as a single string; this includes {len(ret_str)} characters.")
+        return ret_str
+
+# This function defines the key phrase extraction methods. 
 class kpe_class:
     def __init__(self):
                 
@@ -59,6 +129,7 @@ class kpe_class:
         print(f"Extracting key phrases from {text}...")
         try:
             
+            # This method is documented here: https://learn.microsoft.com/en-us/python/api/azure-ai-textanalytics/azure.ai.textanalytics.textanalyticsclient?view=azure-python#azure-ai-textanalytics-textanalyticsclient-extract-key-phrases
             response_whole = self.client.extract_key_phrases(documents = text ,show_stats=show_stats)
             response=response_whole[0]
 
